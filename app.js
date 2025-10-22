@@ -1,3 +1,4 @@
+require('dotenv').config();
 const express = require('express');
 const app = express();
 app.use(express.json()); // Parse JSON bodies
@@ -12,12 +13,29 @@ app.get('/todos', (req, res) => {
   res.status(200).json(todos); // Send array as JSON
 });
 
+app.get('/todo/:id', (req, res) => {
+  if (req.params.id) {
+    const todo = todos.find((t) => t.id === parseInt(req.params.id));
+    if (!todo) return res.status(404).json({ message: 'Todo not found' });
+    return res.status(200).json(todo); // Send single item as JSON
+  }
+  res.status(400).json({ message: 'ID parameter is required' });
+});
 // POST New – Create
 app.post('/todos', (req, res) => {
   const newTodo = { id: todos.length + 1, ...req.body }; // Auto-ID
+  if (!newTodo.task) return res.status(400).json({ message: 'Task is required' });
   todos.push(newTodo);
   res.status(201).json(newTodo); // Echo back
 });
+
+// Filter – Active Todos
+app.get('/todos/active', (req, res) => {
+  const active = todos.filter((t) => !t.completed);
+  if (active.length === 0) {return res.status(404).json({ message: 'No active todos found' });}
+  return res.status(200).json(active); 
+});
+
 
 // PATCH Update – Partial
 app.patch('/todos/:id', (req, res) => {
@@ -39,6 +57,7 @@ app.delete('/todos/:id', (req, res) => {
 
 app.get('/todos/completed', (req, res) => {
   const completed = todos.filter((t) => t.completed);
+  if (completed.length === 0) { return res.status(404).json({ message: 'No completed todos found' });}
   res.json(completed); // Custom Read!
 });
 
